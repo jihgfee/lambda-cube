@@ -72,16 +72,26 @@ Definition True_unit : TTrue := I.
 (* Similarly, we can illustrate how it is impossible to construct a proof of False *)
 Fail Definition False_unit : FFalse := _.
 
+(* A natural consequence of considering proofs as types is that we obtain
+logical implication, being functions, for free! *)
+(* That is, defining, and proving the logical proposition True -> True,
+can be done as follows. *)
 Definition True_impl_True : TTrue -> TTrue :=
   fun _ => I.
 
+(* Conversely, we can show that we can prove False "assuming" False. *)
+(* In particular, we take a term of "False" as input, and immediately use it
+to construct the goal *)
 Definition False_impl_False : FFalse -> FFalse :=
   fun HF => HF.
 
+(* Alternatively, we can leverage the fact that False has no constructors,
+by matching on it, and then construct the output for each constructor
+(of which there are none!) *)
 Definition False_impl_True : FFalse -> TTrue :=
   fun HF => match HF with end.
 
-(* While this is a good start, we dont get much farther, as our type system is *)
+(* While this is a good start, we dont get much further, as our type system is *)
 (* not expressive enough *)
 (* We thus introduce the first Barendregt cube extension, parametric polymorphism *)
 
