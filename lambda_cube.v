@@ -7,7 +7,7 @@ By Jonas Kastberg Hinrichsen
 *)
 
 (**
-This file seeks to provide an understanding of "what"'s and "how"'s
+This file seeks to provide an understanding of the "what"'s and "how"'s
 of logic programming, while we won't be much concerned with the "why's".
 
 The "what"'s:
@@ -22,7 +22,7 @@ We achieve logic programming by using an approach known as the
 "curry-howard correspondence", which coins that "propositions are types" and
 "programs are proofs".
 What this means is that we will describe the propositions that we set out to
-prove as types in the language, e.g. a type could be: TwoPlusTwoIsFour.
+prove as types in the language, e.g. a type could be: TwoPlusTwoEqualsFour.
 A term, or program, of that type can then be thought of as a proof that the
 proposition holds.
 As such, we can check that our proofs are sound using type checking.
@@ -35,8 +35,10 @@ The state of the art in this direction is what we call the
 
 The calculus of construction is the apex of the so-called barendregt cube,
 coined by Henk Barendregt, which illustrates three distinct extensions to
-the most standard functional type system (as inspired by the simply-typed lambda
-calculus).
+the conventional functional type system:
+- Abstraction over types in terms
+- Abstraction over types in types
+- Abstraction over terms in types
 
 In this file, we demonstrate how each of the three extensions allow us to model
 specific properties in a logic, and how the properties are reflected in Coq.
@@ -53,19 +55,21 @@ Module type_def_example.
   | S : nat -> nat.
   
   Inductive nat_list : Type :=
-  | nat_nil : nat_list         (* [] *)
+  | nat_nil : nat_list                      (* [] *)
   | nat_cons : nat -> nat_list -> nat_list. (* x :: xs *)
 End type_def_example.
 
-(* At the foundation of our logic we have the truth-values *)
+(* At the foundation of our logic we have the truth-values: True and False *)
 
-(* The type of True propositions have one constructor, with no arguments *)
-(* That is to model the fact that we can _always_ prove True---it holds vacuously *)
-Inductive TTrue := I : TTrue.
+(* The type of True propositions have _one_ constructor, with no arguments *)
+(* That is to model the fact that we can _always_ prove True---it holds trivially *)
+Inductive TTrue : Type :=
+  | I : TTrue
+.
 
-(* The exact opposite is the case for False propositions, which have _no_ constructor *)
-(* That is to model the fact that we can _never_ prove False---it is in fact a contradiction as will be shown later *)
-Inductive FFalse := .
+(* The exact opposite is the case for False propositions, which has _no_ constructor *)
+(* That is to model the fact that we can _never_ prove False---Obtaining False will in fact lead to a contradiction as will be shown later *)
+Inductive FFalse : Type := .
 
 (* We can now "prove" True propositions as follows---by using the I constructor *)
 Definition True_unit : TTrue := I.
@@ -100,8 +104,7 @@ Definition False_impl_True : FFalse -> TTrue :=
 (**
 Parametric polymorphism introduces the "pi-type" (Πx:∗,T) to the type system.
 This allow us to abstract over types in our terms.
-Practically speaking, it is what allows us to define generic functions, where
-the type does not matter.
+Practically speaking, it is what allows us to define generic functions.
 
 A common example of such a function is the following:
 *)
@@ -112,8 +115,7 @@ Module parametric_polymorphism_example.
 End parametric_polymorphism_example.
 
 (** With parametric polymorphism we can capture generic propositions,
-such as P implies P: P -> P
- *)
+such as "P implies P": P -> P *)
 Definition P_id : forall (P : Type), P -> P :=
   fun (P : Type) (HP : P) => HP.
 (** The term is identical to the identity function (up to renaming),
@@ -122,7 +124,7 @@ proof that the conclusion holds. *)
 
 (* Additionally, we can show how False implies anything (any P) *)
 Definition ex_falso : forall (P : Type), FFalse -> P :=
-  fun (P : Type) (HF : FFalse) => match HF with | end.
+  fun (P : Type) (HF : FFalse) => match HF with end.
 
 (** In particular, as the argument (here FFalse), is "assumed" to hold
 (i.e. that an instance of it exists), we can pattern match on it.
@@ -146,6 +148,7 @@ Module type_former_example.
   | cons : T -> List T -> List T.
   (* Some examples of languages with type formers are: *)
   (* Haskell, Scala *)
+
 End type_former_example.
 
 (** We define the type of logical conjunction (/\) as a type former
@@ -221,12 +224,12 @@ with either. *)
 (** Similarly, we here construct a different term (proof) of the same type
 (proposition) *)
 Definition True_or_True_r : TTrue \/ TTrue :=
-  or_introl I.
+  or_intror I.
 
 (** Some proposition require us to pick the correct constructor.
 One such is the following which can only be proven using the right constructor. *)
-Definition True_or_False_r : TTrue \/ TTrue :=
-  or_intror I.
+Definition True_or_False_l : TTrue \/ FFalse :=
+  or_introl I.
 
 (** Finally, some propositions are still unsatisfiable such as the following. *)
 Fail Definition False_or_False : or FFalse FFalse := _.
@@ -272,14 +275,14 @@ conjunction, where we simply flip the proposition arguments *)
 (** The use of type formers let us extend our logic quite substantially,
 however we can still only express propositions made up of True and False.
 To construct more interesting propositions we then use the final Barendregt
-cube extesion: Dependent types! *)
+cube extension: Dependent types! *)
 
 (* λP, Dependent types! *)
 (* λ_ω + λ2 + λP = λC *)
 
 (**
 Dependent types let us abstract over terms in types.
-More intuitively, this means that we can defined types e.g. of the form:
+More intuitively, this means that we can define types e.g. of the form:
 nat -> Type
  *)
 
